@@ -7,6 +7,16 @@
 #define trigPin 12
 #define echoPin 11
 
+#define lowCutoff 25
+#define highCutoff 100
+#define unchangedCounterDefault 3
+#define lowestButton 2
+#define highestButton 10
+#define offButton 0
+#define maxButton 1
+
+#define mainDelay 100
+
 void setup(){
   Serial.begin(9600);
   pinMode(trigPin, OUTPUT);
@@ -14,8 +24,8 @@ void setup(){
   IrSender.begin(IR_TX_PIN, true);
 }
 
-int zmierzOdleglosc(){
-  long czas, dystans;
+int measureDistance(){
+  long timePassed, distance;
  
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -23,26 +33,50 @@ int zmierzOdleglosc(){
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
  
-  czas = pulseIn(echoPin, HIGH);
-  dystans = czas / 58;
+  timePassed = pulseIn(echoPin, HIGH);
+  distance = timePassed / 58;
 
-  return dystans;
+  return distance;
 }
 
-void zakres(int a, int b) {
-  int jakDaleko = zmierzOdleglosc();
-  if ((jakDaleko > a) && (jakDaleko < b)) {
-      digitalWrite(2, HIGH); //Włączamy buzzer
-  } else {
-      digitalWrite(2, LOW); //Wyłączamy buzzer, gdy obiekt poza zakresem
-  }
-}
-
-
-
+int distance = 0;
+byte buttonNr = 3;
+byte currentButton = 0;
+bool hasButtonChanged = false;
+byte unchangedCounter = unchangedCounterDefault;
 
 void loop(){
 //  Serial.println(buttonToHex(buttonNr), HEX);
-  Serial.println(zmierzOdleglosc());
-  delay(2000);
+  distance = measureDistance();
+  buttonNr = map(distance, lowCutoff, highCutoff, lowestButton, highestButton);
+  if (buttonNr > highestButton){
+    buttonNr = maxButton;
+  } else if (buttonNr <= lowestButton){
+    buttonNr = lowestButton;
+  }
+
+  if(currentButton == buttonNr){
+    hasButtonChanged = false;
+  } else {
+    hasButtonChanged = true;
+  }
+
+  Serial.print(distance);
+  Serial.print(" --- ");
+
+  if(hasButtonChanged){
+    unchangedCounter--;
+    if(unchangedCounter <= 0){
+      
+      Serial.print(buttonToHex(buttonNr), HEX);
+      Serial.print(" --- ");
+      IrSender.sendNECRaw(buttonToHex(buttonNr));
+      currentButton = buttonNr;
+      unchangedCounter = unchangedCounterDefault;
+    }
+  }
+  Serial.print(buttonNr-1);
+  Serial.println("0% power ");
+
+  delay(mainDelay);
 }
