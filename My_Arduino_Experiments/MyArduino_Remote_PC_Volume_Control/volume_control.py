@@ -4,14 +4,26 @@ from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 import math
 
+devices = AudioUtilities.GetSpeakers()
+interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+volume = cast(interface, POINTER(IAudioEndpointVolume))
 
-def main():
-    devices = AudioUtilities.GetSpeakers()
+def setVolume(input_target_volume):
 
-    interface = devices.Activate(
-        IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-    volume = cast(interface, POINTER(IAudioEndpointVolume))
+    try:
+        target_volume = float(input_target_volume)
+        target_volume_db = 10*math.log2(target_volume/100)
+        volume.SetMasterVolumeLevel(target_volume_db, None)
+    except Exception as e:
+        
+        print(e)
+        print("INPUT: ", input_target_volume)
+        
+
     
+
+def getInfo():
+
     mute = volume.GetMute()
     print("Is muted?\t->\t", "Yes!" if mute == 1 else "No")
 
@@ -21,10 +33,14 @@ def main():
     vr = volume.GetVolumeRange()
     print("Volume range\t->\t",vr)
 
+def main():
+    
+    getInfo()
+
     print("Input target volume %: ")
     target_volume = float(input())
-    target_volume_db = 10*math.log2(target_volume/100)
-    volume.SetMasterVolumeLevel(target_volume_db, None)
+    
+    setVolume(target_volume)
 
 
 if __name__ == "__main__":
