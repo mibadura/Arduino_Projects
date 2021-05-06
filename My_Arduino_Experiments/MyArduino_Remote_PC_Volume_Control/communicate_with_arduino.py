@@ -1,6 +1,7 @@
 import serial
 import volume_control
 
+
 arduino = serial.Serial('COM6', 9600, timeout=.25)
 
 while True:
