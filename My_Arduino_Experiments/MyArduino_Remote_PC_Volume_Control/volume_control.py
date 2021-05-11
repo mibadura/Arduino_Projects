@@ -10,62 +10,105 @@ devices = AudioUtilities.GetSpeakers()
 interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
 volume = cast(interface, POINTER(IAudioEndpointVolume))
 
-def setVolume(input_target_volume):
+current_vl_db = -10.0
+current_vl_prc = 50.0
+target_value_db = -10.0
+target_value_prc = 50.0
 
-    vl = volume.GetMasterVolumeLevel()
-    vl_prc = round(2**(vl/10),2)*100
-    print("Current volume ", vl_prc)
+DB_MIN = volume.GetVolumeRange()[0]
+DB_MAX = volume.GetVolumeRange()[1]
 
-    try:
-        target_volume = float(input_target_volume)
-    except Exception as e:
-        print(traceback.format_exc())
-        print(e)
+def DBToPrc(value_in_db):
+    return round(2**(value_in_db/10),6)*100
 
-    try:
-        if(target_volume == 333 and vl_prc > 0):
-            vl_prc -= 0.01
-            target_volume = vl_prc
-        elif(target_volume == 444 and vl_prc < 100):
-            vl_prc += 0.01
-            target_volume = vl_prc
-    except Exception as e:
-        print(traceback.format_exc())
-        print(e)   
+def PRCToDB(value_in_prc):
+    output = 10*math.log2(value_in_prc/100)
+    if(output < DB_MIN):
+        return DB_MIN
+    elif(output>DB_MAX):
+        return DB_MAX
+    else:
+        return output 
 
-    try:
-        target_volume_db = 10*math.log2(target_volume/100)
-        print("\tSetting volume in prc: ", target_volume)
-        print("\tSetting volume in db: ", target_volume_db)
-        volume.SetMasterVolumeLevel(target_volume_db, None)
-    except Exception as e:
-        print("target volume: ",target_volume)
-        print(traceback.format_exc())
-        print(e)
+def getCurrentInfo():
+    global current_vl_db, current_vl_prc
+    current_vl_db = volume.GetMasterVolumeLevel()
+    print("Current volume in DB: ", current_vl_db)
 
-        
+    current_vl_prc = DBToPrc(current_vl_db)
+    print("Current volume in PRC: ", current_vl_prc)
 
+def lowerVol():
+    global current_vl_prc, target_value_prc
     
+    if(current_vl_prc >= 1):
+        print("\nLowering volume")
+        target_value_prc = current_vl_prc - 1
+    else:
+        print("Volume LOW")
+        target_value_prc = 0
 
+def increaseVol():
+    global current_vl_prc, target_value_prc
+    if(current_vl_prc <= 99):
+        print("\nIncreasing volume")
+        target_value_prc = current_vl_prc + 1
+    else:
+        print("\nVolume MAXED")
+        target_value_prc = 100
+
+def setVolume(input_value):
+    global current_vl_db, current_vl_prc, target_value_db, target_value_prc
+    print("\n\t--------------")
+    
+    getCurrentInfo()
+    
+    if(input_value == 333):
+        lowerVol()
+            
+    elif(input_value == 444):
+        increaseVol()
+    elif(input_value == 0):
+        return 255
+    else:
+        target_value_prc = input_value
+  
+
+    try:
+        target_value_db = PRCToDB(target_value_prc)
+        print("\nSetting volume in DB: ", target_value_db)
+        print("Setting volume in PRC: ", target_value_prc)        
+        volume.SetMasterVolumeLevel(target_value_db, None)
+    except Exception as e:
+        print("ERROR: target volume: ",input_value)
+        print(traceback.format_exc())
+        print(e)
+
+    return target_value_prc
+    
 def getInfo():
 
     mute = volume.GetMute()
     print("Is muted?\t->\t", "Yes!" if mute == 1 else "No")
 
     vl = volume.GetMasterVolumeLevel()
-    print("Volume level\t->\t",vl, " = ", round(2**(vl/10),2),"%")
+    print("Volume level\t->\t",vl, " = ", DBToPrc(vl),"%")
 
     vr = volume.GetVolumeRange()
     print("Volume range\t->\t",vr)
+
+def getVolume():
+    vl = volume.GetMasterVolumeLevel()
+    return DBToPrc(vl)
 
 def main():
     
     getInfo()
 
     print("Input target volume %: ")
-    target_volume = float(input())
+    input_value = float(input())
     
-    setVolume(target_volume)
+    setVolume(input_value)
 
 
 if __name__ == "__main__":
