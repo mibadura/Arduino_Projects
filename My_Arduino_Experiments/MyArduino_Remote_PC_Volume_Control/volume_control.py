@@ -69,7 +69,7 @@ def setVolume(input_value):
     elif(input_value == 444):
         increaseVol()
     elif(input_value == 0):
-        return 255
+        return 0
     else:
         target_value_prc = input_value
   

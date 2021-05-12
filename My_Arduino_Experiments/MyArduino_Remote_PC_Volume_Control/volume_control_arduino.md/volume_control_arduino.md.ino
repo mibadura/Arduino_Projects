@@ -14,6 +14,7 @@ TM1637 tm1637(CLK, DIO);
 
 void setup(){
   Serial.begin(9600);
+  Serial.setTimeout(100);
   IrReceiver.begin(IR_RECEIVE_PIN, DISABLE_LED_FEEDBACK);
 //  display.setBrightness(0,true);
 
@@ -83,14 +84,16 @@ if (IrReceiver.decode()){
         }
         
         Serial.println(buttonRead);
-        
-    }
+       
+      }
+      
 
     IrReceiver.resume();
     
   }
   if (Serial.available() > 0) {
-    message = Serial.parseFloat();
+    message = (Serial.readString()).toFloat();
+    
     if(message != 255){
       tm1637.displayNum(message);
       last_message = message;
@@ -98,7 +101,6 @@ if (IrReceiver.decode()){
       tm1637.displayNum(last_message);
       message = last_message;
     }
-    
   }
   
 }
