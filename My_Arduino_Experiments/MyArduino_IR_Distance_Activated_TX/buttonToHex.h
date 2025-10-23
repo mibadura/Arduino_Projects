@@ -1,8 +1,6 @@
-#ifndef MY_LIBRARY_H
-#define MY_LIBRARY_H
+#ifndef BUTTON_TO_HEX_H
+#define BUTTON_TO_HEX_H
 
-#include <Arduino.h>
-
-long buttonToHex(int buttonNr);
+unsigned long buttonToHex(int buttonNr);
 
 #endif
